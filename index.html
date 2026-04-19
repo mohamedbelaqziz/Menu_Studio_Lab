@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu des Posters - Studio Lab - Référence 10.1</title>
+    <style>
+        /* =========================================
+           1. Variables & Palette de Couleurs
+        ========================================= */
+        :root {
+            --color-bg-deep-blue: #002244; 
+            --color-bg-darker-blue: #000a1f; 
+            --color-mid-blue: #0077b3;
+            --color-cyan: #8fdfff; 
+            --color-gold: #f5ba00;
+            --color-gold-glitter: rgba(245, 186, 0, 0.6);
+            --transition-speed: 0.5s;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at center, var(--color-bg-deep-blue) 0%, var(--color-bg-darker-blue) 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* =========================================
+           2. Fond Interactif & Icônes Filigrane
+        ========================================= */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Les 4 Icônes EdTech ciblées */
+        .tech-icon {
+            position: absolute;
+            width: 130px; 
+            height: 130px;
+            pointer-events: none;
+            opacity: 0.05; /* Filigrane très subtil */
+            z-index: 2; 
+            fill: #ffffff;
+        }
+
+        /* Répartition harmonieuse dans les espaces vides */
+        #icon-camera { top: 15%; left: 80%; }    /* Haut Droite */
+        #icon-mic { top: 55%; left: 10%; }       /* Milieu Gauche */
+        #icon-monitor { top: 80%; left: 25%; }   /* Bas Gauche */
+        #icon-gamepad { top: 75%; left: 75%; }   /* Bas Droite */
+
+        /* =========================================
+           3. Conteneur du Réseau (Parallaxe)
+        ========================================= */
+        #network-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: transform 0.1s ease-out; 
+        }
+
+        #network-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Logo de l'Établissement (Haut Gauche) - MODIFICATION : AGRANDI POUR VALORISATION */
+        #logo-institution {
+            position: absolute;
+            top: 30px;
+            left: 45px;
+            width: 310px; /* Agrandissement pour valorisation */
+            max-height: 150px; /* Agrandissement pour valorisation */
+            object-fit: contain;
+            object-position: left center;
+            pointer-events: none; 
+            z-index: 50; 
+            
+            /* Conserve l'astuce CSS pour supprimer le fond blanc et rendre le logo monochrome blanc */
+            mix-blend-mode: screen;
+            filter: invert(1) brightness(1.5);
+            
+            transition: transform 0.3s ease-out;
+        }
+
+        #network-wrapper:hover ~ #logo-institution {
+            transform: translate(5px, 5px); 
+        }
+
+        /* =========================================
+           4. Style des Nœuds
+        ========================================= */
+        .node {
+            position: absolute;
+            cursor: pointer;
+            border-radius: 50%;
+            user-select: none;
+            transition: box-shadow 0.4s ease-out, border-color 0.4s ease-out;
+        }
+
+        /* Logo Central */
+        #logo-center {
+            width: 240px; 
+            height: 240px; 
+            background-color: #ffffff !important; 
+            border: 3px solid var(--color-gold); 
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.5),
+                0 0 50px var(--color-gold-glitter); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            z-index: 30; 
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease-out;
+        }
+
+        #logo-center img {
+            max-width: 85%; 
+            max-height: 85%;
+            object-fit: contain;
+        }
+
+        #logo-center:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 70px var(--color-gold);
+            border-width: 4px;
+        }
+
+        /* Cellules (Fond transparent, texte blanc) */
+        .cell-node {
+            width: 130px;
+            height: 130px;
+            background: transparent;
+            border: 1.5px solid rgba(143, 223, 255, 0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            
+            color: #ffffff;
+            text-align: center;
+            font-size: 0.85rem;
+            line-height: 1.3;
+            padding: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell-node span {
+            display: inline-block;
+            vertical-align: middle;
+            display: -webkit-box;
+            -webkit-line-clamp: 4; 
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.9);
+        }
+
+        .cell-node.hovered {
+            z-index: 40;
+            border: 2px solid var(--color-gold);
+            background: rgba(255, 255, 255, 0.1); 
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.5),
+                0 0 30px var(--color-gold-glitter);
+        }
+
+        /* =========================================
+           5. Lignes de connexion lumineuses
+        ========================================= */
+        #connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5; 
+            pointer-events: none;
+        }
+
+        .connection-line {
+            stroke: rgba(143, 223, 255, 0.4);
+            stroke-width: 1.5;
+            stroke-dasharray: 5, 5;
+            transition: stroke 0.3s, stroke-width 0.3s, opacity 0.3s, stroke-dasharray 0.3s;
+        }
+
+        .connection-line.highlighted {
+            stroke: var(--color-gold);
+            stroke-width: 3;
+            stroke-dasharray: none; 
+            opacity: 0.9;
+            filter: drop-shadow(0 0 8px var(--color-gold));
+        }
+
+        /* =========================================
+           6. La Modale (Affichage du Poster)
+        ========================================= */
+        #poster-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            z-index: 100;
+        }
+
+        #poster-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #close-btn {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            font-size: 3.5rem;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--color-bg-deep-blue);
+            transition: transform 0.2s;
+        }
+
+        #close-btn:hover {
+            transform: scale(1.2);
+            color: var(--color-gold);
+        }
+
+        #poster-content {
+            max-width: 90%;
+            max-height: 75vh;
+            object-fit: contain;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            transform: scale(0.95) translateY(20px);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #poster-overlay.active #poster-content {
+            transform: scale(1) translateY(0);
+        }
+
+        #poster-caption {
+            margin-top: 30px;
+            font-size: 1.4rem;
+            color: var(--color-bg-deep-blue);
+            font-weight: 700;
+            text-align: center;
+            max-width: 80%;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+    
+    <svg id="icon-camera" class="tech-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/>
+    </svg>
+
+    <svg id="icon-mic" class="tech-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3m7 9h-2c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92z"/>
+    </svg>
+
+    <svg id="icon-monitor" class="tech-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 16H3V4h18v12m0-14H3c-1.11 0-2 .89-2 2v12a2 2 0 0 0 2 2h7v2H8v2h8v-2h-2v-2h7a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+    </svg>
+
+    <svg id="icon-gamepad" class="tech-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4l2-2h6l2 2h4c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+    </svg>
+    
+    <div id="network-wrapper">
+        <div id="network-content">
+            <svg id="connections-svg"></svg>
+            
+            <div id="logo-center" class="node" onclick="showPoster('presentation')">
+                <img src="logo1.png" alt="Logo Studio Lab">
+            </div>
+            
+            <div id="cell-nodes"></div>
+        </div>
+    </div>
+
+    <img id="logo-institution" src="logo2.png" alt="Logo Établissement">
+
+    <div id="poster-overlay">
+        <span id="close-btn">&times;</span>
+        <img id="poster-content" src="" alt="Poster">
+        <p id="poster-caption"></p>
+    </div>
+
+    <script>
+        const posterMap = {
+            'presentation': { name: 'Studio Lab', path: 'image_2.png', id: 'logo' },
+            'cell1': { name: 'Accompagnement d’évènements et de clubs universitaires', path: 'image_5.png', id: 'cell1' },
+            'cell2': { name: 'Accompagnement à l’innovation techno-pédagogique', path: 'image_3.png', id: 'cell2' },
+            'cell3': { name: 'Production de ressources audiovisuelles pédagogiques', path: 'image_7.png', id: 'cell3' },
+            'cell4': { name: 'E-learning et ressources collaboratives', path: 'image_4.png', id: 'cell4' },
+            'cell5': { name: 'Production pédagogique assistée par Intelligence Artificielle', path: 'image_6.png', id: 'cell5' },
+            'cell6': { name: 'Expression artistique et médias créatives', path: 'image_8.png', id: 'cell6' },
+            'cell7': { name: 'Technologies immersives et serious gaming', path: 'image_9.png', id: 'cell7' },
+            'cell8': { name: 'Robotique pédagogique et ExAO', path: 'image_10.png', id: 'cell8' },
+            'cell9': { name: 'Encadrement et certification en technologies éducatives', path: 'image_11.png', id: 'cell9' }
+        };
+
+        const cellsData = Object.values(posterMap).filter(item => item.id !== 'logo');
+        const numCells = cellsData.length;
+        const cellContainer = document.getElementById('cell-nodes');
+        const connectionsSvg = document.getElementById('connections-svg');
+        
+        cellsData.forEach((cellData) => {
+            const cellNode = document.createElement('div');
+            cellNode.className = 'cell-node node';
+            cellNode.id = cellData.id;
+            cellNode.innerHTML = `<span>${cellData.name}</span>`;
+            
+            cellNode.addEventListener('mouseenter', () => {
+                cellNode.classList.add('hovered');
+                document.getElementById(`line-${cellData.id}`).classList.add('highlighted');
+            });
+            cellNode.addEventListener('mouseleave', () => {
+                cellNode.classList.remove('hovered');
+                document.getElementById(`line-${cellData.id}`).classList.remove('highlighted');
+            });
+            
+            cellNode.onclick = () => showPoster(cellData.id);
+            cellContainer.appendChild(cellNode);
+
+            const connectionLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            connectionLine.id = `line-${cellData.id}`;
+            connectionLine.setAttribute('class', 'connection-line');
+            connectionsSvg.appendChild(connectionLine);
+        });
+
+        let globalAngleOffset = 0;
+        const rotationSpeed = 0.0006; 
+
+        function animateNetwork() {
+            globalAngleOffset += rotationSpeed;
+
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const orbitRadius = Math.min(w, h) * 0.38; 
+            const centerX = w / 2;
+            const centerY = h / 2;
+
+            cellsData.forEach((cellData, index) => {
+                const angle = (index / numCells) * Math.PI * 2 + globalAngleOffset;
+                const x = Math.cos(angle) * orbitRadius;
+                const y = Math.sin(angle) * orbitRadius;
+
+                const cellNode = document.getElementById(cellData.id);
+                if (cellNode) {
+                    cellNode.style.left = `${centerX + x}px`;
+                    cellNode.style.top = `${centerY + y}px`;
+                    
+                    if (cellNode.classList.contains('hovered')) {
+                        cellNode.style.transform = `translate(-50%, -50%) scale(1.15)`;
+                    } else {
+                        cellNode.style.transform = `translate(-50%, -50%) scale(1)`;
+                    }
+                }
+
+                const line = document.getElementById(`line-${cellData.id}`);
+                if (line) {
+                    line.setAttribute('x1', centerX);
+                    line.setAttribute('y1', centerY);
+                    line.setAttribute('x2', centerX + x);
+                    line.setAttribute('y2', centerY + y);
+                }
+            });
+
+            requestAnimationFrame(animateNetwork);
+        }
+        animateNetwork();
+
+        const wrapper = document.getElementById('network-wrapper');
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) - 0.5;
+            mouseY = (e.clientY / window.innerHeight) - 0.5;
+            const moveX = mouseX * -40;
+            const moveY = mouseY * -40;
+            wrapper.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        });
+
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 80;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        function drawConstellation() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < particleCount; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(143, 223, 255, 0.6)';
+                ctx.fill();
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                for (let j = i + 1; j < particleCount; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 130) {
+                        ctx.beginPath();
+                        const opacity = 1 - (distance / 130);
+                        ctx.strokeStyle = `rgba(143, 223, 255, ${opacity * 0.3})`;
+                        ctx.lineWidth = 1.2;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(drawConstellation);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        requestAnimationFrame(drawConstellation);
+
+        const overlay = document.getElementById('poster-overlay');
+        const posterContent = document.getElementById('poster-content');
+        const posterCaption = document.getElementById('poster-caption');
+        const closeBtn = document.getElementById('close-btn');
+
+        function showPoster(cellId) {
+            const data = posterMap[cellId === 'presentation' ? 'presentation' : cellId];
+            if (data) {
+                posterContent.src = data.path;
+                posterCaption.innerText = data.name;
+                overlay.classList.add('active');
+            }
+        }
+
+        function hidePoster() {
+            overlay.classList.remove('active');
+        }
+
+        closeBtn.addEventListener('click', hidePoster);
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) hidePoster();
+        });
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('active')) hidePoster();
+        });
+
+    </script>
+</body>
+</html>
